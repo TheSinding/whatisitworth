@@ -1,0 +1,23 @@
+{
+  "name": "whatisitworth",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "author": "Simon Sinding (simon@sinding.dev)",
+  "license": "GPL-3",
+  "workspaces": [
+    "api",
+    "frontend"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "@typescript-eslint/parser": "^5.27.1",
+    "eslint": "^8.17.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-react": "^7.30.0",
+    "eslint-plugin-react-hooks": "^4.5.0",
+    "eslint-plugin-workspaces": "^0.7.0"
+  }
+}
