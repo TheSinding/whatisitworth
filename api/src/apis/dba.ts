@@ -6,7 +6,7 @@ import Crawler from 'crawler';
 import { logger } from '../logger';
 import { GenericAPI } from './Generic';
 
-interface Listing {
+export interface Listing {
 	title: string,
 	preview: string,
 	price: number
@@ -49,8 +49,8 @@ export class DBAAPI extends GenericAPI {
 					if (currentPageDepth < maxPageDepth) {
 						const href = nextPage.attr('href');
 						if (href) {
-							logger.info(`Queing ${href}`);
-							crawler.queue(`https://dba.dk${href}`);
+							logger.info(`Queuing ${href}`);
+							crawler.queue(`https://dba.dk${href}&fra=privat`);
 						}
 					}
 
@@ -65,11 +65,13 @@ export class DBAAPI extends GenericAPI {
 							.replace('kr', '')
 							.replace(/\.|\s/g, '');
 
-						totalListings.push({
-							title: title.trim(),
-							preview: preview.trim(),
-							price: Number(price),
-						});
+						if (preview.toLowerCase().includes(term.toLowerCase())) {
+							totalListings.push({
+								title: title.trim(),
+								preview: preview.trim(),
+								price: Number(price),
+							});
+						}
 					});
 
 					// eslint-disable-next-line no-plusplus
@@ -84,16 +86,5 @@ export class DBAAPI extends GenericAPI {
 				resolve(totalListings);
 			});
 		});
-
-		// const response = await this.client.get<string>('/soeg', {
-
-		// 	params: {
-		// 		soeg: term,
-		// 	},
-		// });
-		// console.log(response.data);
-
-		// const dom = new JSDOM(response.data);
-		// console.log(dom.window.document);
 	}
 }
