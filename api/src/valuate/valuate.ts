@@ -3,15 +3,20 @@ import {
 } from 'fastify';
 import { DBAAPI } from '../apis/dba';
 import { logger } from '../logger';
+import { InterquartileRange } from '../utils';
 import { Query, Schemas } from './schemas';
 
-interface Estimation {
+export interface Estimation {
 	min: number,
 	max: number,
 	mean: number,
 	estimation: number
 
 }
+
+const findMean = (set: number[]) => set.reduce((c, n) => n + c, 0) / set.length;
+const findMax = (set: number[]) => set.reduce((c, n) => Math.max(n, c), -Infinity);
+const findMin = (set: number[]) => set.reduce((c, n) => Math.min(n, c), Infinity);
 
 export const ROUTE_OPTIONS: RouteShorthandOptions = {
 	schema: {
@@ -28,23 +33,22 @@ export const route = async (fastify: FastifyInstance): Promise<void> => {
 	fastify.get('/valuate', async (request: FRequest, reply: FastifyReply) => {
 		const listings = await DBAAPI.instance.search(request.query.search);
 		logger.info('Getting value');
-		const estimation: Estimation = {
-			min: Infinity,
-			max: -Infinity,
-			mean: 0,
-			estimation: 0,
+
+		const dataset = listings.filter(({ price }) => !Number.isNaN(price));
+		const [rangeMin, rangeMax] = InterquartileRange(dataset
+			.map(({ price }) => price));
+
+		const filteredListings = dataset.filter(({ price }) => price >= rangeMin && price <= rangeMax);
+		const onlyPrice = filteredListings.map(({ price }) => price);
+		const mean = Number(findMean(onlyPrice).toFixed(2));
+
+		const est: Estimation = {
+			min: findMin(onlyPrice),
+			max: findMax(onlyPrice),
+			mean,
+			estimation: Number((mean - (mean * 0.05)).toFixed(2)),
 		};
 
-		const newEst = listings.reduce((prev, { price }, i, a) => {
-			const mean = prev.mean + price;
-			return {
-				...prev,
-				mean: i === a.length - 1 ? mean / a.length : mean,
-				min: price > prev.min ? prev.min : price,
-				max: price < prev.max ? prev.max : price,
-			};
-		}, estimation);
-
-		reply.send({ count: listings.length, estimation: newEst, data: listings });
+		reply.send({ count: listings.length, estimation: est, data: listings });
 	});
 };
